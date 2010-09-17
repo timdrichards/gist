@@ -1,0 +1,49 @@
+;;
+;; IA32 Gist AST file
+;;
+(store M addressed
+   [word (array bit u l 32)]
+   [half (array bit u l 16)]
+   [byte (array bit u l 8 )])
+
+(store SP indexed 1
+   [word (array bit u l 32)])
+
+(store R  indexed 32
+   [word (array bit u l 32)])
+
+(alias EAX R (%R 0))
+(alias EBX R (%R 3))
+(alias ECX R (%R 1))
+(alias EDX R (%R 2))
+(alias ESI R (%R 6))
+(alias EDI R (%R 7))
+(alias EBP R (%R 5))
+(alias ESP R (%R 4))
+
+(alias AX EAX (rng %EAX 0 15))
+(alias BX EBX (rng %EBX 0 15))
+(alias CX ECX (rng %ECX 0 15))
+(alias DX EDX (rng %EDX 0 15))
+
+(alias AL AX (rng %AX  0 7))
+(alias AH AX (rng %AX  8 15))
+(alias BL BX (rng %BX  0 7))
+(alias BH BX (rng %BX  8 15))
+(alias CL CX (rng %CX  0 7))
+(alias CH CX (rng %CX  8 15))
+(alias DL DX (rng %DX  0 7))
+(alias DH DX (rng %DX  8 15))
+
+(class GR32 (& EAX EBX ECX EDX))
+(class GR16 (& AX  BX  CX  DX))
+(class GR8H (& AH  BH  CH  DH))
+(class GR8L (& AL  BL  CL  DL)) 
+
+(instruction example-1
+   [$disp (array bit u l 32)
+    $imm8 (array bit u l 32)]            
+   (seq
+    (par (if true (<- (%R 3) (add $disp 5)))
+         (if true (<- (%R 4) (sub 9 $imm8))))))
+

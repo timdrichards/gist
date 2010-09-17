@@ -13,7 +13,10 @@
            gist.tree.IntConst
            gist.tree.Param
            gist.tree.Op
-           gist.tree.SemError))
+           gist.tree.SemError
+           gist.tree.Store
+           gist.tree.Alias
+           gist.tree.StClass))
 
 ;; forward reference
 (defn parse-exp)
@@ -156,6 +159,11 @@
     (make-instruction name
                       (parse-inst-params params)
                       (parse-seq seq))))
+
+;; (defn parse-store
+;;   [t]
+;;   (let [[name kind & accs] t]
+;;     (make-store name kind accs)))
 
 (defn parse
   "Returns a gist instruction or :invalid-tree if the

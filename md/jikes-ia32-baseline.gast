@@ -1,0 +1,14 @@
+;;
+;; Jikes IA32 Baseline AST file
+;;
+(store S addressed
+   [slot (array bit u l 32)])
+
+(store SP indexed 1
+   [word (array bit u l 32)])
+
+(instruction iconst
+   [$i (array bit u l 32)]
+   (seq
+    (par (if true (<- %SP (add %SP 1))))
+    (par (if true (<- (%S %SP) $i)))))

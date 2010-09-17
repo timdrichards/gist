@@ -20,6 +20,10 @@
 (defrecord SemError    [msg])
 
 ;;;;;; STORE STUFF ;;;;;;
+(defrecord Store       [name kind accs])
+(defrecord Alias       [name store exp])
+(defrecord StClass     [name exp]) 
+
 ;; store trees
 ;; (defrecord Store [name acc])
 ;; '(store M
@@ -34,48 +38,60 @@
 ;; '(store R 8
 ;;  [word (array bit u l 32)])
 
-   
-(defn reg-class-interp-vector
-  [x]
-  (set x))
+;; (defn reg-class-interp-vector
+;;   [x]
+;;   (set x))
 
-(defn reg-class-interp-range
-  [x]
-  (let [s (nth x 1)
-        e (inc (nth x 2))]
-    (set (range s e))))
+;; (defn reg-class-interp-range
+;;   [x]
+;;   (let [s (nth x 1)
+;;         e (inc (nth x 2))]
+;;     (set (range s e))))
 
-(defn reg-class-interp)
+;; (defn reg-class-interp)
 
-(defn reg-class-interp-diff
-  [x]
-  (let [o1 (reg-class-interp (nth x 1))
-        o2 (reg-class-interp (nth x 2))]
-    (difference o1 o2)))
+;; (defn reg-class-interp-diff
+;;   [x]
+;;   (let [o1 (reg-class-interp (nth x 1))
+;;         o2 (reg-class-interp (nth x 2))]
+;;     (difference o1 o2)))
 
-(defn reg-class-interp-union
-  [x]
-  (let [o1 (reg-class-interp (nth x 1))
-        o2 (reg-class-interp (nth x 2))]
-    (union o1 o2)))
+;; (defn reg-class-interp-union
+;;   [x]
+;;   (let [o1 (reg-class-interp (nth x 1))
+;;         o2 (reg-class-interp (nth x 2))]
+;;     (union o1 o2)))
   
-(defn reg-class-interp-op
-  [x]
-  (condp = (first x)
-      '.. (reg-class-interp-range x)
-      '-  (reg-class-interp-diff  x)
-      '+  (reg-class-interp-union x)))
+;; (defn reg-class-interp-op
+;;   [x]
+;;   (condp = (first x)
+;;       '.. (reg-class-interp-range x)
+;;       '-  (reg-class-interp-diff  x)
+;;       '+  (reg-class-interp-union x)))
 
-(defn reg-class-interp
-  [x]
-  (if (vector? x)
-    (reg-class-interp-vector x)
-    (reg-class-interp-op x)))
+;; (defn reg-class-interp
+;;   [x]
+;;   (if (vector? x)
+;;     (reg-class-interp-vector x)
+;;     (reg-class-interp-op x)))
+
 ;;;;;; STORE STUFF ;;;;;;        
 
 (defn make-error
   [msg]
   (SemError. msg))
+
+(defn make-store
+  [name kind accs]
+  (Store. name kind accs))
+
+(defn make-alias
+  [name store exp]
+  (Alias. name store exp))
+
+(defn make-store-class
+  [name exp]
+  (StClass. name exp))
 
 (defn make-instruction
   [name params seq]
