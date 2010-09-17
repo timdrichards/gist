@@ -1,0 +1,20 @@
+(instruction iconst
+   [$i (array bit u l 32)]
+   (seq
+    (par (if true (<- %SP (add %SP 1))))
+    (par (if true (<- (%S %SP) $i)))))
+
+(instruction example-1
+   [$disp (array bit u l 32)
+    $imm8 (array bit u l 32)]            
+   (seq
+    (par (if true (<- (%R 3) (add $disp 5)))
+         (if true (<- (%R 4) (sub 9 $imm8))))))
+
+(instruction example-1
+   [$disp (array bit u l 32)
+    $imm8 (array bit u l 32)]            
+   (seq
+    (par (if true (<- (%R 3) (add $disp 5)))
+         (if true (<- (%R 4) (sub 9 $imm8))))))
+

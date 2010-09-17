@@ -158,15 +158,30 @@
                       (parse-seq seq))))
 
 (defn parse
+  "Returns a gist instruction or :invalid-tree if the
+  list t is not a valid instruction definition."
   [t]
   (let [op (first t)]
     (cond (= op 'instruction) (parse-instruction t)
           :else :invalid-tree)))
 
+(defn parse-desc
+  "Returns a list of gist instructions parsed from the
+  given gist description file f."
+  [f]
+  (with-open [fr (java.io.FileReader. f)
+              pb (java.io.PushbackReader. fr)]
+    (loop [insts []
+           value (read pb false nil)]
+      (if (nil? value)
+        insts
+        (recur (cons (parse value) insts)
+               (read pb false nil))))))
+
 ;; unparsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defprotocol Unparse
   "Converts a tree AST into a list"
-  (unparse [this] "Unparses a Gist AST into a list"))
+  (unparse [t] "Returns a list representation of the gist instruction tree t."))
 
 (extend-type ArrayType
   Unparse
