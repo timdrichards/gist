@@ -1,0 +1,12 @@
+* Name Spaces
+  - (require 'gist.cisl-03) will compile src/gist/cisl_03.clj and load it into
+    the currently executing clojure environment.
+  - (in-ns 'gist.cisl) will switch to the gist.cisl namespace.  Note, that the
+    namespace can be different than the file name as it is in this case.
+  - (require :reload-all 'gist.cisl-03) will re-compile and re-load the given
+    file into the current executing environment.
+* Lein standalone jar
+  To generate a standalone executable jar file:
+
+  $ lein uberjar
+  $ java -jar gist-0.0.1-standalone.jar
