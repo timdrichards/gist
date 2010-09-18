@@ -160,10 +160,23 @@
                       (parse-inst-params params)
                       (parse-seq seq))))
 
-;; (defn parse-store
-;;   [t]
-;;   (let [[name kind & accs] t]
-;;     (make-store name kind accs)))
+(defn parse-alias
+ [t]
+ (let [[alias store exp] (rest t)]
+   (make-alias alias store
+               (parse-exp exp))))
+
+(defn parse-store
+  [t]
+  (defn parse-accs
+    [accs]
+    (let [pass1 (for [[x y] accs]   
+                  [(keyword x)
+                   (parse-type y)])
+          pass2 (apply hash-map (flatten pass1))] 
+      pass2))
+  (let [[name kind & accs] (rest t)]
+    (make-store name kind (parse-accs accs))))
 
 (defn parse
   "Returns a gist instruction or :invalid-tree if the
