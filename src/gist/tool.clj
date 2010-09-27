@@ -1,4 +1,6 @@
 (ns gist.tool
+  (:use gist.parse
+        clojure.contrib.pprint)
   (:gen-class))
 
 (defn bad-command
@@ -20,11 +22,25 @@
     (throw (IllegalArgumentException.
             (str "I expected 3 arguments for search. See gist help.")))))
 
+(defn do-dump
+  "gist dump md"
+  [args]
+  (if (= (count args) 1)
+    (let [file (first args)
+          desc (parse-desc file)]
+      (println (str "Parsed " (count desc) " elements."))
+      (println (str "Dumping " file "..."))
+      (pprint (map unparse desc))
+      (println "Done."))
+    (throw (IllegalArgumentException.
+            (str "I expected 1 argument for dump. See gist help.")))))
+
 (def help-msg "
 usage: gist command
 
 The most commonly used gist commands are:
     search    Search for instruction selector patterns
+    dump      Dump AST for a machine description
     help      Display help
 
 See 'gist help command' for more information on a specific command.
@@ -39,8 +55,16 @@ usage: gist search src dst smap
     smap      The store mapping from source to target
 ")
 
+(def help-dump "
+Dump AST for a machine description.
+usage: gist dump md
+
+    md        The machine description file
+")
+
 (def help-cmd
-     {"search" help-search})
+     {"search" help-search
+      "dump"   help-dump})
 
 (defn do-help
   ([]    (println help-msg))
@@ -55,6 +79,7 @@ usage: gist search src dst smap
       (let [cmd (first args)]
         (condp = cmd
             "search" (do-search (rest args))
+            "dump"   (do-dump   (rest args))
             "help"   (apply do-help (rest args))
             (bad-command cmd))))
     (catch IllegalArgumentException e
