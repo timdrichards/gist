@@ -8,7 +8,7 @@
            gist.tree.Par
            gist.tree.If
            gist.tree.Asn
-           gist.tree.MRef
+           gist.tree.MemIdx
            gist.tree.BoolConst
            gist.tree.IntConst
            gist.tree.Param
@@ -16,7 +16,8 @@
            gist.tree.SemError
            gist.tree.Store
            gist.tree.Alias
-           gist.tree.StClass))
+           gist.tree.StClass
+           gist.tree.StClassAny))
 
 ;; forward reference
 (defn parse-exp)
@@ -30,13 +31,25 @@
            :fadd  :fsub  :fmod  :fmul  :fdiv  :feq
            :fne   :fgt   :flt   :fge   :fle   :fext})
 
-(defn mref?
-  "Return true if x is a memory reference"
+(defn memidx?
+  "Return true if x is a memory index"
   [x]
   (cond
    (symbol? x) (= \% (first (str x)))
-   (list?   x) (mref? (first x))
+   (list?   x) (and (memidx? (first x))
+                    (or (= (count x) 2)
+                        (= (count x) 1)))
    :else       false))
+
+(defn memrng?
+  "Return true if x is a memory range"
+  [x]
+  (cond
+   (symbol? x) (= \% (first (str x)))
+   (list?   x) (and (memidx? (first x))
+                    (= (count x) 3))
+   :else       false))
+
         
 (defn param?
   "Return true if x is a parameter"
@@ -62,14 +75,19 @@
   [t]
   (make-bconst t))
 
-(defn parse-mref
+(defn parse-memidx
   [t]
   (if (symbol? t)
-    (make-mref t :no-index)
+    (make-memidx t :no-index)
     (let [name (nth t 0)
           idx  (nth t 1)]
-      (make-mref name
-                 (parse-exp idx)))))
+      (make-memidx name
+                   (parse-exp idx)))))
+
+(defn parse-memrng
+  [t]
+  (let [[name from to] t]
+    (make-memrng name from to)))
 
 (defn parse-param
   [t]
@@ -77,11 +95,12 @@
 
 (defn parse-exp
   [t]
-  (cond (integer? t) (parse-int   t)
-        (= 'true  t) (parse-bool  t)
-        (mref?    t) (parse-mref  t)
-        (param?   t) (parse-param t)
-        :else        (parse-op    t)))
+  (cond (integer? t) (parse-int    t)
+        (= 'true  t) (parse-bool   t)
+        (memidx?  t) (parse-memidx t)
+        (memrng?  t) (parse-memrng t)
+        (param?   t) (parse-param  t)
+        :else        (parse-op     t)))
 
 (defn parse-asn
   [t]
@@ -162,9 +181,30 @@
 
 (defn parse-alias
  [t]
- (let [[alias store exp] (rest t)]
-   (make-alias alias store
-               (parse-exp exp))))
+ (let [[alias store from to] (rest t)]
+   (if to
+     (make-alias alias store from to)
+     (make-alias alias store from from))))
+
+(defn parse-store-class-exp) ; forward reference
+
+(defn parse-store-class-any
+  [t]
+  (let [ee (rest t)]
+    (make-store-class-any
+     (map parse-store-class-exp ee))))
+
+(defn parse-store-class-exp
+  [t]
+  (cond
+   (memidx?  t)       (parse-memidx t)
+   (= (first t) 'any) (parse-store-class-any t)))
+
+(defn parse-store-class
+  [t]
+  (let [name (nth t 1)
+        exp  (parse-store-class-exp (nth t 2))]
+    (make-store-class name exp)))
 
 (defn parse-store
   [t]
@@ -175,8 +215,16 @@
                    (parse-type y)])
           pass2 (apply hash-map (flatten pass1))] 
       pass2))
-  (let [[name kind & accs] (rest t)]
-    (make-store name kind (parse-accs accs))))
+  (let [name (nth t 1)
+        kind (nth t 2)]
+    (if (= kind 'indexed)
+      (let [size (nth t 3)
+            accs (nthnext t 4)]
+        (make-store name kind size
+                    (parse-accs accs)))
+      (let [accs (nthnext t 3)]
+        (make-store name kind
+                    (parse-accs accs))))))
 
 (defn parse
   "Returns a gist instruction or :invalid-tree if the
@@ -184,6 +232,9 @@
   [t]
   (let [op (first t)]
     (cond (= op 'instruction) (parse-instruction t)
+          (= op 'store)       (parse-store t)
+          (= op 'alias)       (parse-alias t)
+          (= op 'class)       (parse-store-class t)
           :else :invalid-tree)))
 
 (defn parse-desc
@@ -278,7 +329,7 @@
            (unparse lhs)
            (unparse rhs)))))
 
-(extend-type MRef
+(extend-type MemIdx
   Unparse
   (unparse
    [this]
@@ -315,6 +366,46 @@
          rands (:rands this)]
      (cons op (map unparse rands)))))
 
+(extend-type Store
+  Unparse
+  (unparse
+   [this]
+   (let [store (:name this)
+         kind  (:kind this)
+         size  (:size this)
+         accs  (for [[acc type] (:accs this)]
+                 [(->> acc name symbol) (unparse type)])]
+     (if (= kind 'addressed)
+       (concat (list 'store store kind) accs)
+       (concat (list 'store store kind size) accs)))))
+
+(extend-type Alias
+  Unparse
+  (unparse
+   [this]
+   (let [name  (:name this)
+         store (:store this)
+         from  (:from this)
+         to    (:to this)]
+     (if (= from to)
+       (list 'alias name from)
+       (list 'alias name from to)))))
+
+(extend-type StClass
+  Unparse
+  (unparse
+   [this]
+   (let [name (:name this)
+         exp  (:exp  this)]
+     (list 'class name
+           (unparse exp)))))
+
+(extend-type StClassAny
+  Unparse
+  (unparse
+   [this]
+   (cons 'any (map unparse (:class-list this)))))
+
 (extend-type SemError
   Unparse
   (unparse
@@ -342,3 +433,8 @@
   []
   (and (= iconst    (unparse (parse iconst)))
        (= example-1 (unparse (parse example-1)))))
+
+(defn test-parse
+  []
+  (clojure.contrib.pprint/pprint (map unparse (parse-desc "md/ia32.gast"))))
+  
