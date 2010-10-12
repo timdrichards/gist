@@ -1,23 +1,23 @@
 (ns gist.parse
-  (:use gist.tree gist.types)
+  (:use gist.old-tree gist.types)
   (:import gist.types.ArrayType
            gist.types.BitType)
-  (:import gist.tree.Instruction
-           gist.tree.InstParams
-           gist.tree.Seq
-           gist.tree.Par
-           gist.tree.If
-           gist.tree.Asn
-           gist.tree.MemIdx
-           gist.tree.BoolConst
-           gist.tree.IntConst
-           gist.tree.Param
-           gist.tree.Op
-           gist.tree.SemError
-           gist.tree.Store
-           gist.tree.Alias
-           gist.tree.StClass
-           gist.tree.StClassAny))
+  (:import gist.old-tree.Instruction
+           gist.old-tree.InstParams
+           gist.old-tree.Seq
+           gist.old-tree.Par
+           gist.old-tree.If
+           gist.old-tree.Asn
+           gist.old-tree.MemIdx
+           gist.old-tree.BoolConst
+           gist.old-tree.IntConst
+           gist.old-tree.Param
+           gist.old-tree.Op
+           gist.old-tree.SemError
+           gist.old-tree.Store
+           gist.old-tree.Alias
+           gist.old-tree.StClass
+           gist.old-tree.StClassAny))
 
 ;; forward reference
 (defn parse-exp)

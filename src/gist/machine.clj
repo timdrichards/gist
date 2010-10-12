@@ -1,4 +1,4 @@
-(ns gist.core)
+(ns gist.machine)
 
 (defn make-machine
   ([name]

@@ -1,6 +1,5 @@
 (ns gist.tool
-  (:use gist.parse
-        clojure.contrib.pprint)
+  (:use gist.parse)
   (:gen-class))
 
 (defn bad-command
@@ -30,7 +29,7 @@
           desc (parse-desc file)]
       (println (str "Parsed " (count desc) " elements."))
       (println (str "Dumping " file "..."))
-      (pprint (map unparse desc))
+      (clojure.contrib.pprint/pprint (map unparse desc))
       (println "Done."))
     (throw (IllegalArgumentException.
             (str "I expected 1 argument for dump. See gist help.")))))
