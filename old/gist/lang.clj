@@ -2,7 +2,6 @@
   (:use gist.tree
         gist.types))
 
-
 (defmacro <-
   [lhs rhs]
   `(make-asn '~lhs '~rhs))
