@@ -1,6 +1,6 @@
 (ns #^{:doc    "A library for defining GIST instructions."
        :author "Tim Richards <tim.d.richards@gmail.com>"}
-    gist.lang)
+  gist.lang)
 
 (defmacro type
   "Creates a new type with endianness e, signedness s, and width w."
@@ -260,12 +260,14 @@
 (defn load-machine
   "Loads a GIST machine description from file f."
   [f]
-  (in-ns 'gist.lang)
-  (binding [params (atom {})
-            types  (atom {})
-            insts  (atom {})]
-    (load-file f)
-    {:file    f
-     :params  @params
-     :types   @types
-     :insts   @insts}))
+  (let [oldns (ns-name *ns*)]
+    (in-ns 'gist.lang)
+    (binding [params (atom {})
+              types  (atom {})
+              insts  (atom {})]
+      (load-file f)
+      (in-ns oldns)
+      {:file    f
+       :params  @params
+       :types   @types
+       :insts   @insts})))
