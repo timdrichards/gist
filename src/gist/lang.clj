@@ -257,6 +257,18 @@
   [n p s]
   `(add-inst '~n '~p ~s))
 
+(defn get-inst-semantics
+  [i]
+  (:semantics i))
+
+(defn get-inst-name
+  [i]
+  (:name i))
+
+(defn get-inst-params
+  [i]
+  (:params i))
+
 (defn load-machine
   "Loads a GIST machine description from file f."
   [f]
@@ -271,3 +283,8 @@
        :params  @params
        :types   @types
        :insts   @insts})))
+
+(defn get-machine-inst
+  "Returns the instruction named n from machine m."
+  [m n]
+  (get (get m :insts) n))

@@ -5,17 +5,27 @@
 
 (defn type-symbol
   [n]
-  n)
+  (with-meta n {:type :symbol}))
 
 (defn type-number
   [n]
   (with-meta n {:type :number}))
 
+(defn type-exp)
+
 (defn type-op
   [n]
-  (let [op (nth n 0)
-        args (rest n)]
-    (cons op (map type-exp args))))
+  (let [op     (nth n 0)
+        args   (rest n)
+        texp   (map type-exp args)
+        types  (map #(:type (meta %)) texp)
+        passed (> (count (for [x types y types
+                               :when (not= x y)]
+                           false)) 0)]
+    (println types)
+    (if passed
+      (cons op texp)
+      (throw (Exception. (str "types failed on " n))))))
 
 (defn type-exp
   [n]
@@ -58,4 +68,10 @@
     (with-meta
       (cons 'seq (map type-par args))
       {:type :seq})))
-    
+
+(defn type-inst
+  [i]
+  (assoc i
+    :semantics
+    (type-seq
+     (get i :semantics))))
