@@ -17,11 +17,9 @@
 (defn hash 
   "Generates a hash my multiplying the operator values and ignoring items"
   [t]
-  ;(println t)
   (if (or (not (list? t)) (empty? t) (nil? t)) 1
     (let [op (first t)
           children (rest t)]
-      ;(println op "->" (ignore? op))
       (if (ignore? op) 1
           (reduce * (optable op) (map hash children))) 
           )))
