@@ -1,7 +1,7 @@
 (ns #^{:doc "A library for indexing GIST trees."
        :author "Prasanna Gautam <prasannagautam@gmail.com>"}
   gist.index
-  (:require gist.tree :as tree))
+  (:require [gist.tree :as tree]))
 
 ;; A collection of large-ish primes that we use to compute
 ;; the hash value for each child in a semantic tree.

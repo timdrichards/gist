@@ -1,19 +1,27 @@
 (ns #^{:doc    "A library for matching GIST trees."
        :author "Tim Richards <tim.d.richards@gmail.com>"}
   gist.match
-  (:require gist.tree :as t))
+  (:require [gist.tree :as t]
+            [gist.type :as ty])
+  (:use [gist.constraint]))
+
+(defn add-constraint
+  [c m]
+  (let [cc (:constraints m)]
+    (assoc m :constraints
+           (cons c cc))))
 
 (defn failed?
   [m]
-  (:failed m))
+  (some #(= (:kind %) :false) (:constraints m)))
 
 (defn success?
   [m]
-  (not (:failed m)))
+  (not (failed? m)))
 
 (defn fail
-  [m]
-  (assoc m :failed true))
+  [m r]
+  (add-constraint (!> :false r) m))
 
 (defn any?
   [x]
@@ -41,35 +49,53 @@
         tc (count tn)]
     (if (== sc tc)
       (match-seq sn tn m)
-      (fail m))))
+      (fail m (str "children mismatch: " sn " != " tn)))))
 
-(defn match-op
+;; (defn match-types
+;;   [st tt m]
+;;   (cond
+;;    (and (ty/number? st
+(defn match-types
+  [st tt m]
+  ;; need to figure out how to do this...
+  m)
+
+(defn match-ops
   [s t m]
-  (let [sop (t/get-op s)
-        top (t/get-op t)]
-    (if (= sop top)
+  (if (= (t/get-op s) (t/get-op t))
+    (let [ts (ty/get-type s)
+          tt (ty/get-type t)]
+      (match-types ts tt m))
+    (fail m (str "operation mismatch: " s " != " t))))
+
+(defn match-node
+  [s t m]
+  (let [r (match-ops s t m)]
+    (if (success? r)
       (match-children s t m)
-      (fail m))))
+      r)))
 
 (defn match-const
   [s t m]
-  (if (= s t) m (fail m)))    
+  (if (= s t) m (fail m (str "constant mismatch: " s " != " t))))
 
 (defn bind-param
   [s t m]
-  (let [bo (:bindings m)
-        bn (assoc bo t s)]
-    (assoc m :bindings bn)))
+  (add-constraint (!> :binding [s t]) m))
 
 (defn match-tree
   [s t m]
   (cond
-   (and (t/op-node? s) (t/op-node? t)) (match-op    s t m)
+   (and (t/op-node? s) (t/op-node? t)) (match-node  s t m)
    (and (t/const?   s) (t/const?   t)) (match-const s t m)
-   (and (any?       s) (t/param?   t)) (bind-param  s t m)
+   (and (t/const?   s) (t/param?   t)) (bind-param  s t m)
+   (and (t/param?   s) (t/const?   t)) (add-constraint (!> :param [s t]) m)
    :else (throw (Exception. (str "match-tree: unknown case: " s ", " t)))))
 
 (defn match
   [s t]
-  (match-tree s t {}))
+  (let [r (match-tree s t {})]
+    (if (and (empty? r) (success? r))
+      (add-constraint (!> :true :true) r)
+      r)))
               
