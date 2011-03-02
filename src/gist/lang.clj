@@ -228,6 +228,10 @@
 (defop 1 fneg
   "GIST floating-point negate operation.")
 
+;; location operations
+(defop 2 lget
+  "GIST location get operation.")
+
 (defmacro seq
   "GIST sequence statement."
   [& p]
