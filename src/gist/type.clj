@@ -2,8 +2,8 @@
        :author "Tim Richards <tim.d.richards@gmail.com>"}
   gist.type
   (:require [gist.tree :as t])
-  (:use [gist.lang
-         clojure.contrib.str-utils :only (str-join)]))
+  (:use [gist.lang]
+        [clojure.contrib.str-utils :only (str-join)]))
 
 ;;;; type definitions ;;;;
 
@@ -80,18 +80,6 @@
     :signed s
     :width  w}))
 
-(defn repr
-  "Returns the string representation of type t."
-  [t]
-  (let [i (type-info t)]
-    (cond
-     (error-type? t)  (str "error-type")
-     (int-type?   t)  "int-type"
-     (float-type? t)  "float-type"
-     (array-type? t)  (str "array-type<" (:endian i) "," (:signed i) "," (:width i) ">")
-     :else
-     (str t))))
-
 ;;;; type predicates ;;;;
 
 (defn istype?
@@ -145,6 +133,18 @@
    (t/int-const?   n) (int-type)
    (t/float-const? n) (float-type)
    :else              (:type (meta n))))
+
+(defn repr
+  "Returns the string representation of type t."
+  [t]
+  (let [i (type-info t)]
+    (cond
+     (error-type? t)  (str "error-type")
+     (int-type?   t)  "int-type"
+     (float-type? t)  "float-type"
+     (array-type? t)  (str "array-type<" (:endian i) "," (:signed i) "," (:width i) ">")
+     :else
+     (str t))))
 
 ;;;;  type checking rules ;;;;
 
