@@ -2,12 +2,14 @@
        :author "Prasanna Gautam <prasannagautam@gmail.com"}
   wist.core
   (:use compojure.core hiccup.core hiccup.page-helpers
-        clojure.contrib.string  clojure.contrib.pprint )
-  (:require [compojure.route :as route]
+         clojure.contrib.pprint )
+  (:require gist.lang
+            [compojure.route :as route]
             [compojure.handler :as handler]
-            clojure.contrib.java-utils)
+            [clojure.contrib.string  :as st :only (butlast)]
+            clojure.contrib.java-utils
+            )
   (:import [java.io File FilenameFilter]))
-(require 'gist.lang)
 (defn view-layout [& content]
   (html
     (doctype :xhtml-strict)
@@ -21,6 +23,7 @@
 (defn formatted-code [code]
   [:pre (with-out-str (pprint code))]
   )
+
 
 (defn page-doesnt-exist []
   (view-layout [:h2 "Exists not the page looking for you are."]
@@ -49,7 +52,7 @@
         fil (proxy [FilenameFilter] []
               (accept [dir name] (. name (endsWith ".md"))))      
         machines (map 
-                   #(butlast 3 (. % getName)) 
+                   #(st/butlast 3 (. % getName)) 
                    (. dir (listFiles fil)))
         ]
     (view-layout [:ul
