@@ -2,7 +2,7 @@
        :author "Prasanna Gautam <prasannagautam@gmail.com"}
   wist.core
   (:use compojure.core hiccup.core hiccup.page-helpers
-        clojure.contrib.string  clojure.pprint)
+        clojure.contrib.string  clojure.contrib.pprint)
   (:import [java.io File FilenameFilter]))
 (require 'gist.lang)
 (defn view-layout [& content]
@@ -15,11 +15,23 @@
                 [:title "WIST"]
                 [:body content]])))
 
+(defn formatted-code [code]
+  [:pre (with-out-str (pprint code))]
+  )
+
 (defn display-machine [name]
-  (let [ machine (gist.lang/load-machine (str "md/" name ".md"))]
-  (view-layout [:h1 "test" ]
-    [:p.machine machine]
-  )))
+  (binding [*ns* *ns*]
+  (let [machine (gist.lang/load-machine (str "md/" name ".md"))]
+    (println (pprint machine))
+    (view-layout [:h1 "test" ]
+    [:div.machine [:p.name name]
+     [:h2 "Parameters"]
+     [:p.params (formatted-code (:params machine))]
+     [:h2 "Instructions"]
+     [:p.insts (formatted-code (:insts machine))]
+     [:h2 "Types"]
+      [:p.types (formatted-code (:types machine))]]
+  ))))
 
 (defn show-machines-list []
   (let [dir (File. "md")
