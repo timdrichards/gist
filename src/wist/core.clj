@@ -2,7 +2,7 @@
        :author "Prasanna Gautam <prasannagautam@gmail.com"}
   wist.core
   (:use compojure.core hiccup.core hiccup.page-helpers
-         clojure.contrib.pprint )
+        clojure.contrib.pprint )
   (:require gist.lang
             [compojure.route :as route]
             [compojure.handler :as handler]
@@ -10,6 +10,7 @@
             clojure.contrib.java-utils
             )
   (:import [java.io File FilenameFilter]))
+
 (defn view-layout [& content]
   (html
     (doctype :xhtml-strict)
