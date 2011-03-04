@@ -21,8 +21,23 @@
                 [:body content]])))
 
 (defn formatted-code [code]
-  [:pre (with-out-str (pprint code))]
-  )
+  (cond 
+    (symbol? code ) code
+    (number? code) code
+    (map? code)
+    (with-out-str (doseq [key (keys code)]
+                        (do
+                          (if (or (map? (code key) ) (seq? (code key)))
+                            (do
+                              (println key)
+                            (doseq [k (keys (code key))]
+                              (println (format "%s-> %s" k (formatted-code ((code key) k ))))
+                            ))
+                          ( println (format "%s -> %s" key (formatted-code (code key))))
+                          )
+                        )))
+    (seq? code) (with-out-str (pprint code))
+  ))
 
 
 (defn page-doesnt-exist []
@@ -37,14 +52,14 @@
           [:h2 "No such machine description exists"])
     ;else 
     (let [machine (gist.lang/load-machine (str "md/" name ".md"))]
-      (view-layout [:h1 "test" ]
-                   [:div.machine [:p.name name]
+      (view-layout [:h1 name ]
+                   [:div.machine 
                     [:h2 "Parameters"]
-                    [:p.params (formatted-code (:params machine))]
+                    [:p.params [:pre (formatted-code (:params machine))]]
                     [:h2 "Instructions"]
-                    [:p.insts (formatted-code (:insts machine))]
+                    [:p.insts [:pre (formatted-code (:insts machine))]]
                     [:h2 "Types"]
-                    [:p.types (formatted-code (:types machine))]]
+                    [:p.types [:pre (formatted-code (:types machine))]]]
                    )))))
 
 (defn show-machines-list []
