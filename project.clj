@@ -9,11 +9,12 @@
                            [ring/ring-jetty-adapter "0.3.6"]
                            [compojure "0.6.0"]
                            [hiccup "0.2.6"]]
-            :dev-dependencies [[swank-clojure "1.2.0"]]
+            :dev-dependencies [[swank-clojure "1.2.0"]
+                               [lein-ring "0.3.2"]]
             :repositories {"clojure-releases"       "http://build.clojure.org/releases"
                            "clojars.org"            "http://clojars.org/repo"}
             :source-path "src"
             ;  :aot  [gist.tool]
             ;  :main gist.tool
-              :main wist.serve
+            :ring {:handler wist.core/app}
             )

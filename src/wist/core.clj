@@ -3,7 +3,9 @@
   wist.core
   (:use compojure.core hiccup.core hiccup.page-helpers
         clojure.contrib.string  clojure.contrib.pprint )
-  (:require clojure.contrib.java-utils)
+  (:require [compojure.route :as route]
+            [compojure.handler :as handler]
+            clojure.contrib.java-utils)
   (:import [java.io File FilenameFilter]))
 (require 'gist.lang)
 (defn view-layout [& content]
@@ -59,10 +61,12 @@
     ))
 
 
-(defroutes app
+(defroutes main-routes
            (GET "/" []
                 (show-machines-list))
            (GET "/machine/:name" [name] (display-machine name))
            (GET "/*"[] (page-doesnt-exist))
            )
 
+(def app 
+  (handler/site main-routes))
