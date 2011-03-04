@@ -1,5 +1,8 @@
+.DS_Store
 *.jar
 *~
 lib
 classes
 attic
+*.swp
+*.swo
