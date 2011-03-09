@@ -80,6 +80,12 @@
     (= (first (str n)) \%)
     false))
 
+(defn memory?
+  "Returns true if n is a store or store class."
+  [n]
+  (or (store? n)
+      (store-class? n)))
+
 (defn take-param
   "Returns the parameter part of a store class
    if n is a store class and n has a parameter
@@ -97,6 +103,11 @@
 (defn op?
   "Returns true if n is an op node."
   [n]
-  (or (not (const? n))
-      (not (param? n))
-      (not (store? n))))
+  (and (not (const? n))
+       (not (param? n))
+       (not (store? n))))
+
+;; (def ops '[add addc sub mul div band bor bxor brsz brsz0 frsz frsz0
+;;            conc eq ne gt lt le ge land lor lxor ror rol lsh rsh rsha
+;;            sext zext lnot dec inc neg pos pop0 pop1 fadd fsub fmod fmul
+;;            fdiv feq fne fgt flt fge fle fext fneg lget])
