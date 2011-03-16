@@ -1,8 +1,71 @@
 (ns #^{:doc    "A library for working with GIST trees."
        :author "Tim Richards <tim.d.richards@gmail.com>"}
   gist.canon
-  (:require [gist.tree  :as tree]
-            [gist.index :as idx ]))
+  (:require [gist.tree   :as tree]
+            [gist.index  :as idx ]
+            [clojure.set :as set ]))
+
+(defn- dbg
+  "A useful debugging function."
+  [s n]
+  n)
+
+;;;; Dependency Analysis ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- depend-par-flat
+  "Flattens multiple parallel blocks in a tree n
+   into a tree with a single parallel block."
+  [n]
+  (tree/make-op 'seq
+    (reduce #(tree/make-op* 'par
+              (concat
+                (tree/get-children %1)
+                (tree/get-children %2)))
+            (tree/get-children n))))
+
+(defn- depend-par-vec
+  "Returns a vector or guarded effects. It assumes the
+   tree n has only one parallel block."
+  [n]
+  (let [par (tree/child n 1)
+        cc  (tree/get-children par)]
+    (vec cc)))
+
+(defn- depend?
+  "Returns true if n1 depends on n2."
+  [n1 n2]
+  (defn vars [n]
+    (cond
+     (tree/op-node? n) (map vars (tree/get-children n))
+     (tree/param?   n) [n]
+     (tree/memory?  n) [n]
+     :else
+     (throw "Unknown node kind")))
+
+  (let [x (set (flatten (vars (tree/child n1 2))))
+        y (set (flatten (vars (tree/child n2 1))))]
+    (if (some #(y %) x) true false)))
+
+(defn- depend-graph
+  "Returns a dependency graph."
+  [v]
+  (defn scan [i j]
+    (if (< j 0)
+      []
+      (let [n1 (nth v i)
+            n2 (nth v j)]
+        (cond
+         (depend? n1 n2)  (cons j (scan i (dec j)))
+         :else            (scan i (dec j))))))
+
+  (loop [i (dec (count v))
+         g v]
+    (if (= i 0)
+      (assoc g i [])
+      (recur (dec i) (assoc g i (scan i (dec i)))))))
+            
+
+;;;; Ranking Analysis ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- rank+
   "Returns a new rank vector from node n and rank r.  A rank vector
@@ -74,12 +137,6 @@
        :else
        (compare (str n1) (str n2))))))
 
-(defn- dbg
-  "A useful debugging function."
-  [s n]
-  (println s n)
-  n)
-
 (defn- assoc?
   "Returns true if op is an associative operation."
   [op]
@@ -114,9 +171,9 @@
           cc (tree/get-children n)
           fl (map nary cc)]
       (if (assoc? op)
-        (apply tree/make-op op
+        (tree/make-op* op
                (flatten-args op fl))
-        (apply tree/make-op op fl)))
+        (tree/make-op* op fl)))
     ; else
     n))
 
@@ -128,13 +185,13 @@
           cc (tree/get-children n)]
       (if (and (assoc? op) (> (count cc) 2))
         (let [a1 (first cc)
-              a2 (binary (apply tree/make-op op (rest cc)))]
+              a2 (binary (tree/make-op* op (rest cc)))]
           (tree/make-op op a1 a2))
-        (apply tree/make-op op cc)))
+        (tree/make-op* op cc)))
     ; else
     n))
           
-(defn rank-tree
+(defn- rank-tree
   "Returns a tree whose operands have been sorted
   by the following ranking scheme:
     - Constants receive rank 0.
@@ -150,15 +207,43 @@
    (tree/store-class?  n) (rank+ n 3)
    :else (let [op (tree/get-op n)
                rv (map rank-tree (tree/get-children n)) ; rank children
-               sv (sort cmpr rv)                        ; sort ranked children
+               sv (if (assoc? op) (sort cmpr rv) rv)    ; sort ranked children
                mr (maxr sv)                             ; max rank
                cc (map node sv)]                        ; extract nodes
-           (rank+ (apply tree/make-op op cc) mr))))     ; rank node
-   
+           (rank+ (tree/make-op* op cc) mr))))     ; rank node
+
+(defn- rank-expr
+  "Returns a ranked expression."
+  [n]
+  (binary (node (rank-tree (nary n)))))
+
+(defn- canon-geff
+  "Returns a guarded effect in canonical form."
+  [n]
+  (let [guard  (rank-expr (tree/child n 1))
+        effect (rank-expr (tree/child n 2))]
+    (tree/make-op '<- guard effect)))
+
+(defn- canon-par
+  "Returns a parallel block in canonical form."
+  [n]
+  (tree/make-op*
+   'par
+   (map canon-geff
+        (tree/get-children n))))
+
+(defn- canon-seq
+  "Returns a sequence in canonical form."
+  [n]
+  (tree/make-op*
+   'seq
+   (map canon-par
+        (tree/get-children n))))
+
 (defn canon
   "Returns the tree t in canonical form."
   [t]
-  (binary (node (rank-tree (nary t)))))
+  (canon-seq t))
 
 ; sample trees
 (def a '(add (add 4 5) (sub 6 7)))
@@ -167,3 +252,7 @@
 (def d '(add (add %R 3) (sub %R 4)))
 (def e '(add (add %R &x) (sub %R &x)))
 (def f '(add (add %R $x) (sub $x %R)))
+
+;; (def i (gist.lang/get-machine-inst
+;;         (gist.lang/load-machine "md/arm.md")
+;;         'adcis))

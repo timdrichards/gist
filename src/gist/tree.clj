@@ -8,10 +8,12 @@
   [o & c]
   (cons o c))
 
-(defn get-children
-  "Returns the children of tree node n."
-  [n]
-  (rest n))
+(defn make-op*
+  "Similar to make-op, however, make-op* Makes a tree
+   node with operation op and a list of children cc:
+     (make-op* 'add '(3 4))"
+  [o cc]
+  (cons o cc))
 
 (defn get-op
   "Returns the operation of tree node n."
@@ -23,12 +25,26 @@
   [n]
   (seq? n))
 
+(defn get-children
+  "Returns the children of tree node n."
+  [n]
+  (rest n))
+
+(defn child
+  "Returns child i of tree node n."
+  [n i]
+  {:pre [(op-node? n)
+         (<= i(count (get-children n)))
+         (>= i 1)]}
+  (nth (get-children n) (- i 1)))
+
 (defn leaf-node?
   "Returns true if the tree node is a leaf."
   [n]
   (not (op-node? n)))
 
 (defn has-op?
+  "Returns true if n is an op node and the operation is op."
   [n op]
   (and (op-node? n)
        (= (get-op n) op)))

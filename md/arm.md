@@ -22,3 +22,14 @@
         (<- $Z (addc %R:rn %I:imm8 $C))
         (<- $C (addc %R:rn %I:imm8 $C))
         (<- $V (addc %R:rn %I:imm8 $C)))))
+
+
+(definst foo
+  [rn rd imm8 s]
+  (seq
+   (par (<- %R:rd (addc %R:rn %I:imm8 $C))
+        (<- %R:rn (addc %R:rn %I:imm8 $C))
+        (<- %R:rn (addc %R:rd %I:imm8 $C))
+        (<- %R:rs (addc %R:rn %I:imm8 $C))
+        (<- $V (addc %R:rn %I:imm8 $C)))))
+
