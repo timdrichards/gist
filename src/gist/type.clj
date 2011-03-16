@@ -3,7 +3,12 @@
   gist.type
   (:require [gist.tree :as t])
   (:use [gist.lang]
-        [clojure.contrib.str-utils :only (str-join)]))
+        [clojure.contrib.str-utils :only (str-join)]
+        [clojure.contrib.generic.math-functions :only (log ceil)]))
+
+(defn log2
+  [v]
+  (ceil (/ (log v) (log 2))))
 
 ;;;; type definitions ;;;;
 
@@ -131,7 +136,7 @@
   [n]
   (cond
    (t/int-const?   n) (int-type)
-   (t/float-const? n) (float-type)
+   (t/float-const? n) (float-type 64)
    :else              (:type (meta n))))
 
 (defn repr
@@ -185,8 +190,8 @@
    (and (float-type? t1) (int-type?   t2)) (fail)
    (int-type?   t1)   t2
    (int-type?   t2)   t1
-   (float-type? t1)   t2
-   (float-type? t2)   t1
+   (float-type? t1)   (max (:width t1) (:width t2))
+   (float-type? t2)   (max (:width t1) (:width t2))
    :else
    (let [v (err "type unification failed: "
                 "unknown case: "

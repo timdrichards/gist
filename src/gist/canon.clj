@@ -212,7 +212,7 @@
                cc (map node sv)]                        ; extract nodes
            (rank+ (tree/make-op* op cc) mr))))     ; rank node
 
-(defn- rank-expr
+(defn rank-expr
   "Returns a ranked expression."
   [n]
   (binary (node (rank-tree (nary n)))))
