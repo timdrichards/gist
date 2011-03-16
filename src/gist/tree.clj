@@ -105,7 +105,8 @@
   [n]
   (and (not (const? n))
        (not (param? n))
-       (not (store? n))))
+       (not (store? n))
+       (not (store-class? n))))
 
 ;; (def ops '[add addc sub mul div band bor bxor brsz brsz0 frsz frsz0
 ;;            conc eq ne gt lt le ge land lor lxor ror rol lsh rsh rsha

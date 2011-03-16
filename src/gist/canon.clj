@@ -152,7 +152,7 @@
                rv (map rank-tree (tree/get-children n)) ; rank children
                sv (sort cmpr rv)                        ; sort ranked children
                mr (maxr sv)                             ; max rank
-               cc (map node sv)]                       ; extract nodes
+               cc (map node sv)]                        ; extract nodes
            (rank+ (apply tree/make-op op cc) mr))))     ; rank node
    
 (defn canon
