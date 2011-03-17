@@ -1,35 +1,33 @@
-(deftype lu4 (type little unsigned 4))
-(deftype lu1 (type little unsigned 1))
-(deftype lu8 (type little unsigned 8))
+(machine arm)
 
-(defparam rd   lu4)
-(defparam rn   lu4)
-(defparam rs   lu4)
-(defparam imm8 lu8)
-(defparam s    lu1)
+;; types
+(def lu4  (array-type little unsigned 4))
+(def lu1  (array-type little unsigned 1))
+(def lu8  (array-type little unsigned 8))
+(def ls8  (array-type little signed   8))
+(def ls16 (array-type little signed   16))
+(def ls32 (array-type little signed   32))
+
+(defstore R 16 ls32)
+(defstore Mb * ls8 )
+(defstore Mh * ls16)
+(defstore Mw * ls32)
+
+;; (defclass %R R (range 0 15))
+;; (defclass %I I 
 
 (definst adci
-  [rn rd imm8]
+  [rd lu4, rn lu4, rs lu4, imm8 lu8, s lu1]
   (seq
    (par (-> true (<- %R:rd (addc %R:rn %I:imm8 $C)))
         (-> true (<- $C (addc %R:rn %I:imm8 $C))))))
 
-(definst adcis
-  [rn rd imm8 s]
-  (seq
-   (par (<- %R:rd (addc %R:rn %I:imm8 $C))
-        (<- $N (addc %R:rn %I:imm8 $C))
-        (<- $Z (addc %R:rn %I:imm8 $C))
-        (<- $C (addc %R:rn %I:imm8 $C))
-        (<- $V (addc %R:rn %I:imm8 $C)))))
-
-
-(definst foo
-  [rn rd imm8 s]
-  (seq
-   (par (<- %R:rd (addc %R:rn %I:imm8 $C))
-        (<- %R:rn (addc %R:rn %I:imm8 $C))
-        (<- %R:rn (addc %R:rd %I:imm8 $C))
-        (<- %R:rs (addc %R:rn %I:imm8 $C))
-        (<- $V (addc %R:rn %I:imm8 $C)))))
+;; (definst adcis
+;;   [rn lu4, rd lu4, imm8 lu8, s lu1]
+;;   (seq
+;;    (par (<- %R:rd (addc %R:rn %I:imm8 $C))
+;;         (<- $N (addc %R:rn %I:imm8 $C))
+;;         (<- $Z (addc %R:rn %I:imm8 $C))
+;;         (<- $C (addc %R:rn %I:imm8 $C))
+;;         (<- $V (addc %R:rn %I:imm8 $C)))))
 
