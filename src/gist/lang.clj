@@ -1,110 +1,138 @@
 (ns #^{:doc    "A library for defining GIST instructions."
-       :author "Tim Richards <tim.d.richards@gmail.com>"}
+       :author ["Tim Richards <richards@cs.umass.edu>",
+                "Elisabeth Baseman <ebaseman@cs.umass.edu>"]
+       }
   gist.lang)
 
-(def *machines*        (ref {}))
-(def *current-machine* (ref nil))
+(defn make-op
+  [op args]
+  (cons op args))
 
-(defn machine-exists?
-  [name]
-  (contains? @*machines* name))
+(defn isop?
+  [t]
+  (and (seq? t)
+       (symbol? (first t))))
 
-(defn in-machine?
-  []
-  (not (nil? @*current-machine*)))
+(defn args
+  [t]
+  (rest t))
 
-(defn set-machine
-  [name machine]
-  (dosync
-   (ref-set *machines*
-            (assoc @*machines* name
-                   machine))))
+(defn isvar?
+  [t]
+  (if (symbol? t)
+    (= \$ (first (seq (str t))))
+    false))
 
-(defn new-machine
-  [name]
-  (set-machine name {:name name
-                     :insts {}
-                     :stores {}}))
+(defn var-name
+  [v]
+  (let [s (seq (str v))  ; to sequence
+        n (rest s)]      ; var name
+    (symbol (apply str n))))
 
-(defn lookup-machine
-  [name]
-  (@*machines* name))
+(defn check-tree
+  [t]
+  (cond
+   (isop?    t) (map check-tree t)
+   (integer? t) (make-op 'iconst (list t))
+   (isvar?   t) (make-op 'var (list (var-name t)))
+   :default t))
 
-(defn lookup-inst
-  [name]
-  ((current-machine) name))
+(defn check-args
+  [args]
+  (map check-tree args))
 
-(defn current-machine
-  []
-  (lookup-machine @*current-machine*))
+(defmacro defop
+  [op]
+  `(defmacro ~op
+     [& args#]
+     (let [cargs#  (check-args args#)]
+       `(make-op '~'~op '~cargs#))))
 
-(defn update-inst
-  [name enc sem]
-  (let [machi (current-machine)
-        insts (:insts machi)
-        instx (assoc insts name
-                     {:name      name
-                      :encoding  enc
-                      :semantics sem})
-        machx (assoc machi :insts instx)]
-    (set-machine @*current-machine* machx)))
+;; Define operations:
 
-(defmacro machine
-  [name]
-  `(dosync
-    (ref-set *current-machine* '~name)
-    (when (not (machine-exists? '~name))
-      (new-machine '~name))
-    nil))
+; Statements:
+(defop goto)
+(defop nop)
+(defop par)
+(defop gact)
+(defop lset)
+(defop excp)
 
-(defmacro definst
-  [name enc sem]
-  (let [qe (->> (partition 2 enc)
-                (map #(list `(quote ~(first %)) (second %)))
-                (reduce concat)
-                (cons 'list))]
-    `(if (in-machine?)
-       (let [e# (apply assoc {} ~qe)
-             s# '~sem]
-         (update-inst '~name e# s#)
-         nil)
-       (throw (Exception. "current machine is not defined.")))))       
+; Locations:
+(defop mem)
+(defop iconst)
+(defop fconst)
+(defop param)
 
-(defn stores
-  []
-  ((current-machine) :stores))
+; Arithmetic:
+(defop add)
+(defop sub)
+(defop modu)
+(defop mul)
+(defop div)
 
-(defn add-store
-  [name store]
-  (let [stores  (stores)
-        storesx (assoc stores name store)
-        machine (assoc (current-machine) :stores storesx)]
-    (set-machine @*current-machine* machine)))
+(defop fadd)
+(defop fsub)
+(defop fmod)
+(defop fmul)
+(defop fdiv)
+(defop fext)
 
-(defn make-store
-  [name size type]
-  {:name name
-   :size size
-   :type type})
+; Bitwise:
+(defop rotl)
+(defop rotr)
+(defop shl)
+(defop shr)
+(defop shra)
+(defop band)
+(defop bor)
+(defop bxor)
 
-(defmacro defstore
-  [name size type]
-  `(add-store '~name
-      (make-store '~name '~size ~type)))
+; Logical:
+(defop eq)
+(defop neq)
+(defop ge)
+(defop le)
+(defop gt)
+(defop lt)
+(defop land)
+(defop lor)
+(defop lxor)
 
-(defmacro array-type
-  "Creates a new type with endianness e, signedness s, and width w."
-  [e s w]
-  `{:endian '~e
-    :signed '~s
-    :width  ~w})
+; Floating Logical:
+(defop feq)
+(defop fneq)
+(defop fge)
+(defop gle)
+(defop fgt)
+(defop flt)
+(defop fland)
+(defop flor)
+(defop flxor)
 
-(defn load-machine
-  "Loads a GIST machine description from file f."
-  [f]
-  (let [oldns (ns-name *ns*)]
-    (in-ns 'gist.lang)
-    (println (format "Loading machine description file %s..." f))
-    (load-file f)
-    (in-ns oldns)
-    nil))
+; Extra:
+(defop conc)
+(defop sext)
+(defop frsz)
+(defop frsz0)
+(defop brsz)
+(defop brsz0)
+(defop zext)
+
+; Unary:
+(defop bnot)
+(defop decr)
+(defop incr)
+(defop lnot)
+(defop neg)
+(defop pos)
+(defop pop0)
+(defop pop1)
+(defop fneg)
+
+; Memory:
+(defop lget)
+(defop lgetr)
+
+; Compiler Constant:
+(defop ccnst)
