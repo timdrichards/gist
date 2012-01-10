@@ -30,7 +30,7 @@
   (= (getop t1)
      (getop t2)))
 
-(defn varn?
+(defn variable?
   [t]
   (if (symbol? t)
     (= \$ (first (seq (str t))))
@@ -45,10 +45,10 @@
 (defn check-tree
   [t]
   (cond
-    (op?      t) (map check-tree t)
-    (integer? t) (make-op 'iconst (list t))
-    (varn?    t) (make-op 'varn (list (var-name t)))
-    :default  t))
+    (op?       t) (map check-tree t)
+    (integer?  t) (make-op 'iconst (list t))
+    (variable? t) (make-op 'varn (list (var-name t)))
+    :default   t))
 
 (defn check-args
   [op args]
@@ -57,12 +57,34 @@
     (map check-tree args)
     args))
 
-(defmacro defop
+(defmacro defop2
   [op]
   `(defmacro ~op
      [& args#]
      (let [cargs#  (check-args '~op args#)]
        `(make-op '~'~op '~cargs#))))
+
+(defmacro defop
+  "defop is used to define new gist operations.  The form
+   (defop <name>) will create a macro (<name> args) used for 
+   constructing instances of that operation with the given
+   args to the operation.  It will also create a predicate 
+   function (is-<name>? t) that will return true if t is a
+   <name> operation."
+  [op]
+  (let [pname (symbol (str "is-" op "?"))] 
+    `(do 
+       ; This defines the constructor macro.
+       (defmacro ~op
+         [& args#]
+         (let [cargs#  (check-args '~op args#)]
+            `(make-op '~'~op '~cargs#)))
+
+       ; This defines the predication function.
+       (defn ~pname
+         [t#]
+         (= (getop t#) '~op)) 
+     )))
 
 ;; Define operations:
 
