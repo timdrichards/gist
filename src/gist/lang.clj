@@ -30,7 +30,7 @@
   (= (getop t1)
      (getop t2)))
 
-(defn isvar?
+(defn varn?
   [t]
   (if (symbol? t)
     (= \$ (first (seq (str t))))
