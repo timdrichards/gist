@@ -45,9 +45,9 @@
 (defn check-tree
   [t]
   (cond
-    (isop?    t) (map check-tree t)
+    (op?      t) (map check-tree t)
     (integer? t) (make-op 'iconst (list t))
-    (isvar?   t) (make-op 'varn (list (var-name t)))
+    (varn?    t) (make-op 'varn (list (var-name t)))
     :default  t))
 
 (defn check-args
