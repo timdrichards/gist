@@ -8,7 +8,7 @@
   [op args]
   (cons op args))
 
-(defn isop?
+(defn op?
   [t]
   (and (seq? t)
        (symbol? (first t))))
@@ -16,6 +16,19 @@
 (defn args
   [t]
   (rest t))
+
+(defn argn
+  [t index]
+  (nth (args t) index)) 
+
+(defn getop
+  [t]
+  (first t))
+
+(defn sameop
+  [t1 t2]
+  (= (getop t1)
+     (getop t2)))
 
 (defn isvar?
   [t]
@@ -32,20 +45,23 @@
 (defn check-tree
   [t]
   (cond
-   (isop?    t) (map check-tree t)
-   (integer? t) (make-op 'iconst (list t))
-   (isvar?   t) (make-op 'var (list (var-name t)))
-   :default t))
+    (isop?    t) (map check-tree t)
+    (integer? t) (make-op 'iconst (list t))
+    (isvar?   t) (make-op 'varn (list (var-name t)))
+    :default  t))
 
 (defn check-args
-  [args]
-  (map check-tree args))
+  [op args]
+  (if (not (or (= op 'iconst)
+               (= op 'varn)))
+    (map check-tree args)
+    args))
 
 (defmacro defop
   [op]
   `(defmacro ~op
      [& args#]
-     (let [cargs#  (check-args args#)]
+     (let [cargs#  (check-args '~op args#)]
        `(make-op '~'~op '~cargs#))))
 
 ;; Define operations:
@@ -118,6 +134,7 @@
 (defop brsz)
 (defop brsz0)
 (defop zext)
+(defop varn)
 
 ; Unary:
 (defop bnot)
