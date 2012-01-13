@@ -78,12 +78,13 @@
 (defn array-type
   "Returns an array type with endianess e, signedness s,
    and width w."
-  [e s w]
+  [e s w b]
   (make-type
    :array
    {:endian e
     :signed s
-    :width  w}))
+    :width  w
+    :base   b}))
 
 ;;;; type predicates ;;;;
 
@@ -146,8 +147,11 @@
     (cond
      (error-type? t)  (str "error-type")
      (int-type?   t)  "int-type"
+     (bit-type?   t)  "bit"
      (float-type? t)  "float-type"
-     (array-type? t)  (str "array-type<" (:endian i) "," (:signed i) "," (:width i) ">")
+     (array-type? t)  (str "array-type<" (:endian i) "," (:signed i)
+                           "," (:width i)
+                           "," (repr (:base i)) ">")
      :else
      (str t))))
 
@@ -195,7 +199,7 @@
    :else
    (let [v (err "type unification failed: "
                 "unknown case: "
-                t1 " =? " t2)]
+                (repr t1) " =? " (repr t2))]
      (error-type v))))
 
 (defn type-store
@@ -316,3 +320,6 @@
     :semantics
     (type-seq
      (get i :semantics))))
+
+;; Standard Type Definitions
+(def bit (bit-type))
