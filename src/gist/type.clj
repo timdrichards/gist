@@ -182,7 +182,7 @@
        (= w1 w2) t1
        (< w1 w2) t2
        (> w1 w2) t1)))
-      
+
   (cond
    (and (array-type? t1) (array-type? t2)) (pick)
    (same-type? t1 t2) t1
