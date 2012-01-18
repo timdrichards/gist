@@ -20,21 +20,18 @@
 
 (defn unify
   [x y m]
- ;; (println x "," y "," m)
   (cond  
-   ;;(and (is-empty? x) (is-empty? y)) m
    (and (is-iconst? x) (is-iconst? y)) (if (= x y) m false)
    (and (is-fconst? x) (is-fconst? y)) (if (= x y) m false)
-   (is-varn?   x) (if (isbound? m x) (unify (get m x) y) (bind x y m))
+   (is-varn?   x) (if (isbound? m x) (unify (get m x) y m) (bind x y m))
    (and (op? x) (op? y)) (if (sameop x y) (unify-args (args x) (args y) m) false)
    :default false))
 
 (defn unify-args
       [xargs yargs m]
-     ;; (println "xargs:" xargs)
       (cond
 	(not (== (count xargs) (count yargs))) false
-	(== (count xargs) 0) m
+	(is-empty? xargs) m
 	:default (let [b (unify (first xargs) (first yargs) m)] 
           (if (not b)
 	      false
