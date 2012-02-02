@@ -4,14 +4,11 @@
        }
   gist.lang)
 
+;;;; Op Data Structure Abstraction ;;;;
+
 (defn make-op
   [op args]
   (cons op args))
-
-(defn op?
-  [t]
-  (and (seq? t)
-       (symbol? (first t))))
 
 (defn args
   [t]
@@ -25,16 +22,7 @@
   [t]
   (first t))
 
-(defn sameop
-  [t1 t2]
-  (= (getop t1)
-     (getop t2)))
-
-(defn variable?
-  [t]
-  (if (symbol? t)
-    (= \$ (first (seq (str t))))
-    false))
+;;;; Op Description Language Definitions ;;;;
 
 (defn var-name
   [v]
@@ -56,13 +44,6 @@
                (= op 'varn)))
     (map check-tree args)
     args))
-
-(defmacro defop2
-  [op]
-  `(defmacro ~op
-     [& args#]
-     (let [cargs#  (check-args '~op args#)]
-       `(make-op '~'~op '~cargs#))))
 
 (defmacro defop
   "defop is used to define new gist operations.  The form
@@ -86,7 +67,51 @@
          (= (getop t#) '~op)) 
      )))
 
-;; Define operations:
+;;;; Op Language Predicates ;;;;
+
+(defn op?
+  [t]
+  (and (seq? t)
+       (symbol? (first t))))
+
+(defn binop?
+  [t]
+  (and (op? t)
+       (= (count (args t)) 2)))
+
+(defn unop?
+  "Returns true if tree t is a unary op."
+  [t]
+  (and (op? t)
+       (= (count (args t)) 1)))
+       
+(defn sameop?
+  "Returns true if tree t1 and t2 have the same op."
+  [t1 t2]
+  (= (getop t1)
+     (getop t2)))
+
+(defn hasop?
+  "Returns true if the tree t has the given op."
+  [t op]
+  (= (getop t) op))
+
+(defn variable?
+  "Returns true if the tree t is a variable."
+  [t]
+  (if (symbol? t)
+    (= \$ (first (seq (str t))))
+    false))
+
+(defn isconst?
+  "Returns true if the tree t is a constant."
+  [t]
+  (and (op? t)
+       (or (is-iconst? t)
+           (is-fconst? t))))
+       
+
+;;;; Op Definitions ;;;;
 
 ; Statements:
 (defop goto)

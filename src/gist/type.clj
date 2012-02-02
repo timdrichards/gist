@@ -1,14 +1,8 @@
-(ns #^{:doc    "A library for type checking GIST instructions."
+(ns #^{:doc    "A library for describing GIST types."
        :author "Tim Richards <tim.d.richards@gmail.com>"}
   gist.type
-  (:require [gist.tree :as t])
   (:use [gist.lang]
-        [clojure.contrib.str-utils :only (str-join)]
         [clojure.contrib.generic.math-functions :only (log ceil)]))
-
-(defn log2
-  [v]
-  (ceil (/ (log v) (log 2))))
 
 ;;;; type definitions ;;;;
 
