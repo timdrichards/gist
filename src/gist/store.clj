@@ -4,10 +4,10 @@
        }
   gist.store)
 
-(defmacro defstore
-  "Defines a store"
+(defmacro defmem
+  "Defines a memory"
   [name ty]
   `(do
-     (def ~name {:kind :store,
-                 :name '~name,
+     (def ~name {:kind :store
+                 :name '~name
                  :type ~ty})))
