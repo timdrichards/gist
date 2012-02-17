@@ -4,17 +4,16 @@
   (:use [gist.lang]))
 
 ;;;; Type Data Structure Abstraction ;;;;
+
 (defn make-type
   "Returns a type of kind k with info i."
   [k i]
-  {:type k :info i})
+  {:kind k :info i})
 
 (defn type-kind
-  "Returns the kind of type t.  The kind of a type
-   can be:
-     (1) :array"
+  "Returns the kind of type t."
   [t]
-  (:type t))
+  (:kind t))
 
 (defn type-info
   "Returns the info of type t.  The info of a type
@@ -28,39 +27,19 @@
 (defn unknown-type
   "Returns an unknown type.  The unknown type is used
    to give a tree node whose type is not yet known."
-  [m]
-  (make-type :unknown m))
+  []
+  (make-type :unknown {}))
 
 (defn error-type
   "Returns an error type.  The error type is used to
    indicate a type error that occurred in a tree."
-  [m]
-  (make-type :error m))
-
-(defn seq-type
-  "Returns a sequence type."
-  []
-  (make-type :seq :seq))
-
-(defn par-type
-  "Returns a parallel type."
-  []
-  (make-type :par :par))
-
-(defn geff-type
-  "Returns a guarded effect type."
-  []
-  (make-type :-> :->))
-
-(defn asn-type
-  "Returns an assignment type."
-  []
-  (make-type :<- :<-))
+  [error]
+  (make-type :error {:error error}))
 
 (defn int-type
   "Returns an integer type."
   []
-  (make-type :int :int))
+  (make-type :int {}))
 
 (defn float-type
   "Returns a float type with width w."
@@ -88,7 +67,6 @@
               :none
               1
               :none))
-
 
 ;;;; Type Predicates ;;;;
 
@@ -130,20 +108,18 @@
   (= (type-kind t1)
      (type-kind t2)))
 
-(defn set-type
-  "Returns a new tree node constructed from n
-   with its type set to t."
-  [n t]
-  (let [m (meta n)]
-    (with-meta n
-      (assoc m :type t))))
+;;;; Getters/Setters ;;;;
+(defn get-type-info
+  [type]
+  (:info type))
 
-(defn get-type
-  "Returns the type of tree t."
-  [t]
-  (:type (meta t)));
+(defn get-type-width
+  [type]
+  (:width (get-type-info type)))
 
-(defn repr
+;;;; Utility Functions ;;;;
+
+(defn type-repr
   "Returns the string representation of type t."
   [t]
   (let [i (type-info t)]
@@ -154,11 +130,14 @@
      (float-type? t)  "float-type"
      (array-type? t)  (str "array-type<" (:endian i) "," (:signed i)
                            "," (:width i)
-                           "," (repr (:base i)) ">")
+                           "," (type-repr (:base i)) ">")
      :else
      (str t))))
 
-(defmacro defmtype
+;;;; Type Language ;;;;
+
+(defmacro defty
+  "Defines a new type named name."
   [name ty]
   `(do
      (def ~name

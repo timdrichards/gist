@@ -22,6 +22,19 @@
   [t]
   (first t))
 
+(defn set-type
+  "Returns a new tree node constructed from n
+   with its type set to t."
+  [n t]
+  (let [m (meta n)]
+    (with-meta n
+      (assoc m :type t))))
+
+(defn get-type
+  "Returns the type of tree t."
+  [t]
+  (:type (meta t)));
+
 ;;;; Op Language Predicates ;;;;
 
 (defn op?
