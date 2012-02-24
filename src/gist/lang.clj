@@ -2,104 +2,87 @@
        :author ["Tim Richards <richards@cs.umass.edu>",
                 "Elisabeth Baseman <ebaseman@cs.umass.edu>"]
        }
-  gist.lang)
+  gist.lang
+  (:require (gist [ops     :as ops]
+                  [type    :as type]
+                  [store   :as store])))
 
-;;;; Op Data Structure Abstraction ;;;;
+;;;; Machine Language & Environment ;;;;
+(def *env-machines* (ref {}))
+(def *env-current*  (ref nil))
 
-(defn make-op
-  [op args]
-  (cons op args))
+(defn env-add-type
+  [name type]
+  (let [machine (@*env-machines* @*env-current*)
+        types   (machine :types)]
+    (dosync
+     (ref-set types
+              (assoc @types
+                name type)))))
 
-(defn args
-  [t]
-  (rest t))
+(defn env-add-store
+  [name store]
+  (let [machine  (@*env-machines* @*env-current*)
+        memories (machine :memories)]
+    (dosync
+     (ref-set memories
+              (assoc @memories
+                name store)))))
 
-(defn argn
-  [t index]
-  (nth (args t) index)) 
+(defn env-add-inst
+  [name inst]
+  (let [machine  (@*env-machines* @*env-current*)
+        insts (machine :insts)]
+    (dosync
+     (ref-set insts
+              (assoc @insts
+                name inst)))))
 
-(defn getop
-  [t]
-  (first t))
 
-(defn set-type
-  "Returns a new tree node constructed from n
-   with its type set to t."
-  [n t]
-  (let [m (meta n)]
-    (with-meta n
-      (assoc m :type t))))
+(defn load-machine
+  [file]
+  (binding [*ns* (the-ns 'gist.lang)]
+    (do (load-file file)
+        'done.)))
 
-(defn get-type
-  "Returns the type of tree t."
-  [t]
-  (:type (meta t)));
+(defmacro machine
+  [name]
+  (in-ns '~name))
 
-;;;; Op Language Predicates ;;;;
+(defmacro machineo
+  [name]
+  `(do
+     (create-ns '~name)
+     (binding [*ns* (the-ns '~name)]
+       (dosync
+        (ref-set *env-machines*
+                 (assoc @*env-machines*
+                   '~name {:types    (ref {})
+                           :memories (ref {})
+                           :insts    (ref {})})))
+       (dosync
+        (ref-set *env-current* '~name))
+       '~name)))
 
-(defn op?
-  [t]
-  (and (seq? t)
-       (symbol? (first t))))
+(defn machine-get
+  "Return the machine given the symbol name."
+  [name]
+  (let [m @*env-machines*]
+    (m name)))
 
-(defn binop?
-  [t]
-  (and (op? t)
-       (= (count (args t)) 2)))
+(defn machine-get-types
+  [name]
+  (deref (:types (machine-get name))))
 
-(defn unop?
-  "Returns true if tree t is a unary op."
-  [t]
-  (and (op? t)
-       (= (count (args t)) 1)))
-       
-(defn sameop?
-  "Returns true if tree t1 and t2 have the same op."
-  [t1 t2]
-  (= (getop t1)
-     (getop t2)))
+(defn machine-get-memories
+  [name]
+  (deref (:memories (machine-get name))))
 
-(defn hasop?
-  "Returns true if the tree t has the given op."
-  [t op]
-  (= (getop t) op))
-
-(defn variable?
-  "Returns true if the tree t is a variable."
-  [t]
-  (if (symbol? t)
-    (= \$ (first (seq (str t))))
-    false))
-
-(defn isconst?
-  "Returns true if the tree t is a constant."
-  [t]
-  (and (op? t)
-       (or (hasop? t 'iconst)
-           (hasop? t 'fconst))))
-
-;;;; Op Description Language Definitions ;;;;
-
-(defn var-name
-  [v]
-  (let [s (seq (str v))  ; to sequence
-        n (rest s)]      ; var name
-    (symbol (apply str n))))
-
-(defn check-tree
-  [t]
-  (cond
-    (op?       t) (map check-tree t)
-    (integer?  t) (make-op 'iconst (list t))
-    (variable? t) (make-op 'varn (list (var-name t)))
-    :default   t))
-
-(defn check-args
-  [op args]
-  (if (not (or (= op 'iconst)
-               (= op 'varn)))
-    (map check-tree args)
-    args))
+(defn machine-get-insts
+  [name]
+  (deref (:insts (machine-get name))))
+                     
+;;;; Operation Language ;;;;
 
 (defmacro defop
   "defop is used to define new gist operations.  The form
@@ -114,16 +97,16 @@
        ; This defines the constructor macro.
        (defmacro ~op
          [& args#]
-         (let [cargs#  (check-args '~op args#)]
-            `(make-op '~'~op '~cargs#)))
+         (let [cargs#  (ops/check-args '~op args#)]
+            `(ops/make-op '~'~op '~cargs#)))
 
        ; This defines the predication function.
        (defn ~pname
          [t#]
-         (= (getop t#) '~op)) 
+         (= (ops/getop t#) '~op)) 
      )))       
 
-;;;; Op Definitions ;;;;
+;; Op Definitions
 
 ; Statements:
 (defop goto)
@@ -212,3 +195,89 @@
 
 ; Compiler Constant:
 (defop ccnst)
+
+
+;;;; Type Language ;;;;
+(defmacro defty
+  "Defines a new type named name."
+  [name ty]
+  `(do
+     (def ~name
+          ~ty)
+     (env-add-type '~name ~name)
+     '~name))
+
+(defmacro array-type
+  [endianness
+   signedness
+   width
+   base-type]
+  (cond
+   (and (not (= endianness 'little))
+        (not (= endianness 'big)))
+   (throw (Throwable. (str "Invalid endianness: "
+                           endianness)))
+   (and (not (= signedness 'signed))
+        (not (= signedness 'unsigned)))
+   (throw (Throwable. (str "Invalid signedness: "
+                           signedness)))
+   :default
+   `(type/array-type (keyword '~endianness)
+                     (keyword '~signedness)
+                     ~width
+                     ~base-type)))
+
+(def bit
+     (type/bit-type))
+
+
+;;;; Store Language ;;;;
+(def *memories* (ref {}))
+
+(defmacro defmem
+  "Defines a memory."
+  [name type]
+  `(do
+     (def ~name
+          (store/make-memory '~name
+                             ~type))
+     (env-add-store '~name ~name)
+     '~name))
+
+(defmacro defreg
+  "Defines a register."
+  [name type]
+  `(do
+     (def ~name
+          (store/make-register '~name
+                               ~type))
+     (env-add-store '~name ~name)
+     '~name))
+
+(defmacro defalias
+  "Defines an alias."
+  ([name store]
+     `(do
+        (def ~name
+             (store/make-alias '~name
+                               ~store))
+        (env-add-store '~name ~name)
+        '~name))
+  ([name store begin]
+     `(do
+        (def ~name
+             (store/make-alias '~name
+                               ~store
+                               ~begin
+                               ~begin))
+        (env-add-store '~name ~name)
+        '~name))  
+  ([name store begin end]
+     `(do
+        (def ~name
+             (store/make-alias '~name
+                               ~store
+                               ~begin
+                               ~end))
+        (env-add-store '~name ~name)
+        '~name)))

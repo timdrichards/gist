@@ -133,12 +133,3 @@
                            "," (type-repr (:base i)) ">")
      :else
      (str t))))
-
-;;;; Type Language ;;;;
-
-(defmacro defty
-  "Defines a new type named name."
-  [name ty]
-  `(do
-     (def ~name
-          ~ty)))

@@ -1,12 +1,11 @@
-(ns #^{:doc    "A library for defining GIST instructions."
+(ns #^{:doc    "A library for defining GIST memories."
        :author ["Tim Richards <richards@cs.umass.edu>",
                 "Elisabeth Baseman <ebaseman@cs.umass.edu>"]
        }
   gist.store
-  (:require [gist.type :as type]))
+  (:use [gist.type]))
 
 ;;;; Store Data Structure Definitions ;;;;
-
 (defn make-store
   [family name type]
   {:kind   :store
@@ -69,7 +68,7 @@
        {:kind  :alias
         :name  name
         :begin 0
-        :end   (type/get-type-width
+        :end   (get-type-width
                 (get-store-type store))
         :store store}
        (throw (Throwable. "Invalid store object given to make-alias"))))
@@ -84,29 +83,3 @@
 
 ;;;; Store Language ;;;;
 
-(defmacro defmem
-  "Defines a memory."
-  [name type]
-  `(do
-     (def ~name
-          (make-memory '~name
-                       ~type))))
-
-(defmacro defreg
-  "Defines a register."
-  [name type]
-  `(do
-     (def ~name
-          (make-register '~name
-                         ~type))))
-
-(defmacro defalias
-  "Defines an alias."
-  ([name store]
-     `(do
-        (def ~name
-             (make-alias '~name ~store))))
-  ([name store begin end]
-     `(do
-        (def ~name
-             (make-alias '~name ~store ~begin ~end)))))
