@@ -117,7 +117,7 @@
 (defop excp)
 
 ; Locations:
-(defop mem)
+(defop loc)
 (defop iconst)
 (defop fconst)
 (defop param)
